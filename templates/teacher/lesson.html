@@ -1,0 +1,73 @@
+{% extends './base.html' %}
+
+{% block class_info %}active{% endblock %}
+
+{% block title %}授课信息页{% endblock %}
+
+{% block content %}
+    <table class="table table-striped">
+        <tr>
+            <th>学期</th>
+            <th>课号</th>
+            <th>上课时间</th>
+        </tr>
+        {% for lesson in page_of_list %}
+            <tr>
+                <td>{{ lesson.xq }}</td>
+                <td>{{ lesson.kh }}</td>
+                <td>{{ lesson.sksj }}</td>
+            </tr>
+        {% endfor %}
+   </table>
+    <nav aria-label="Page navigation">
+        <ul class="pagination" style="margin-left: 42%">
+            <li>
+                {% if page_of_list.has_previous %}
+                    <a href="?page={{ page_of_list.previous_page_number }}" aria-label="Previous">
+                        <span aria-hidden="true">&laquo;</span>
+                    </a>
+                 {% else %}
+                    <span aria-hidden="true">&laquo;</span>
+                {% endif %}
+            </li>
+            {% for page_number in page_range %}
+                {% if page_number == page_of_list.number %}
+                        <li class="active"><span>{{ page_number }}</span></li>
+                {% else %}
+                    <li><a href="?page={{ page_number }}">{{ page_number }}</a></li>
+                {% endif %}
+            {% endfor %}
+            <li>
+                {% if page_of_list.has_next %}
+                    <a href="?page={{ page_of_list.next_page_number }}" aria-label="Next">
+                        <span aria-hidden="true">&raquo;</span>
+                    </a>
+                {% else %}
+                    <span aria-hidden="true">&raquo;</span>
+                {% endif %}
+            </li>
+        </ul>
+    </nav>
+{% endblock %}
+
+{% block script %}
+    <script>
+        window.onpageshow = function () {
+            setTimeout(function () {
+                let semes = sessionStorage.getItem('semester');
+                if (semes === null){
+                    semes = $("#semester").text();
+                }
+                $("#semester_change").val(semes);
+            },100)
+        };
+        $("#edit_semester_confirm").click(function () {
+            let cookie_semester = $("#semester_change").val();
+            sessionStorage.setItem('semester', cookie_semester);
+            let number = getCookie('number');
+            let url = '{% url 't_Lesson' 'number' 'semester' %}';
+            url = url.replace(/number/,number).replace(/semester/,cookie_semester);
+            window.location.href = url;
+        })
+    </script>
+{% endblock %}

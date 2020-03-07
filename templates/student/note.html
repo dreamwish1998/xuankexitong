@@ -1,0 +1,77 @@
+{% extends './base.html' %}
+
+{% block s_note %}active{% endblock %}
+
+{% block title %}通知管理{% endblock %}
+
+{% block style %}
+    <style>
+        table tr td{
+            text-overflow: ellipsis;
+            overflow: hidden;
+            white-space: nowrap;
+        }
+        .btn_send_note{
+            width: 100%;
+            margin-bottom: 20px;
+            height: 40px;
+        }
+        .input-textarea{
+            width: 90%;
+            margin: 0 auto;
+            padding: 10px;
+        }
+        .note_content_box{
+            padding: 0 40px;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    {% block sub_content %}{% endblock %}
+{% endblock %}
+
+{% block panel %}
+    <div class="panel-primary panel">
+        <div class="panel-heading" style="text-align: center">
+            查看通知类型
+        </div>
+        <div class="panel-body">
+            <ul class="nav nav-pills nav-stacked">
+                <li role="presentation" class="{% block school_note_active %}{% endblock %}" onclick="Transfer_school_note()">
+                    <a href="#">查看全校通知</a></li>
+                <li role="presentation" class="{% block student_note_active %}{% endblock %}" onclick="Transfer_student_note()">
+                    <a href="#">查看学生通知</a></li>
+            </ul>
+        </div>
+    </div>
+{% endblock %}
+
+{% block script %}
+    <script>
+        toastr.options.positionClass = 'toast-top-center';
+        window.onpageshow = function(){
+            setTimeout(function () {
+                let semes = sessionStorage.getItem('semester');
+                if (semes === null){
+                    semes = $("#semester").text();
+                }
+                $("#semester_change").val(semes);
+            },100)
+        };
+        function Transfer_student_note() {
+           let number = getCookie('number');
+           let semester = $("#semester").text();
+           let url = '{% url 's_Get_Student_Note' 'xh' 'xq' %}';
+           url = url.replace(/xh/, number).replace(/xq/, semester);
+           window.location.href = url;
+        }
+        function Transfer_school_note() {
+            let semester = $("#semester").text();
+            let url = '{% url 's_Get_School_Note' 'xq' %}';
+            url = url.replace(/xq/, semester);
+            window.location.href = url;
+        }
+
+    </script>
+{% endblock %}

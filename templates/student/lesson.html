@@ -1,0 +1,219 @@
+{% extends './base.html' %}
+
+{% block s_class_info %}active{% endblock %}
+
+{% block title %}本学期课程信息{% endblock %}
+
+{% block content %}
+    <table class="table table-striped">
+        <tr>
+            <th>课号</th>
+            <th>课名</th>
+            <th>工号</th>
+            <th>教师姓名</th>
+            <th>上课时间</th>
+        </tr>
+        {% for lesson in page_of_list %}
+            <tr>
+                <td>{{ lesson.0 }}</td>
+                <td>{{ lesson.1 }}</td>
+                <td>{{ lesson.2 }}</td>
+                <td>{{ lesson.3 }}</td>
+                <td>{{ lesson.4 }}</td>
+            </tr>
+        {% endfor %}
+   </table>
+    <nav aria-label="Page navigation">
+        <ul class="pagination" style="margin-left: 42%">
+            <li>
+                {% if page_of_list.has_previous %}
+                    <a href="?page={{ page_of_list.previous_page_number }}" aria-label="Previous">
+                        <span aria-hidden="true">&laquo;</span>
+                    </a>
+                 {% else %}
+                    <span aria-hidden="true">&laquo;</span>
+                {% endif %}
+            </li>
+            {% for page_number in page_range %}
+                {% if page_number == page_of_list.number %}
+                        <li class="active"><span>{{ page_number }}</span></li>
+                {% else %}
+                    <li><a href="?page={{ page_number }}">{{ page_number }}</a></li>
+                {% endif %}
+            {% endfor %}
+            <li>
+                {% if page_of_list.has_next %}
+                    <a href="?page={{ page_of_list.next_page_number }}" aria-label="Next">
+                        <span aria-hidden="true">&raquo;</span>
+                    </a>
+                {% else %}
+                    <span aria-hidden="true">&raquo;</span>
+                {% endif %}
+            </li>
+        </ul>
+    </nav>
+    <div class="modal fade" id="OptionLesson_add" aria-labelledby="MyModalLabel" tabindex="-1">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <form class="form-horizontal" autocomplete="off" method="post" accept-charset="UTF-8">
+                    {% csrf_token %}
+                    <div class="modal-header">
+                        <button class="close" data-dismiss="modal">x</button>
+                        <h3>添加选课信息</h3>
+                    </div>
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label for="mobile" class="col-sm-2 control-label">课号</label>
+                            <div class="col-sm-6">
+                                <input type="text" id="lesson_number" class="form-control" name="lesson_number" placeholder="输入该课程课号">
+                            </div>
+                            <div class="col-sm-4 tips"><span>* </span>必填</div>
+                        </div>
+                        <div class="form-group">
+                            <label for="email" class="col-sm-2 control-label">工号</label>
+                            <div class="col-sm-6">
+                                <input type="text" id="teacher_number" name="teacher_number" placeholder="输入授课教师工号" class="form-control">
+                            </div>
+                            <div class="col-sm-4 tips"><span>* </span>必填</div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button id="option_lesson_save" class="btn btn-primary" type="button">保存</button>
+                        <button class="btn btn-info" data-dismiss="modal">关闭</button>
+                    </div>
+                </form>
+			</div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block panel_content %}
+    <ul class="nav nav-pills nav-stacked">
+        <li role="presentation" id="add_option_lesson"><a href="#">添加课程</a></li>
+        <li role="presentation" id="edit_del_lesson"><a href="#">删除课程</a></li>
+    </ul>
+{% endblock %}
+
+{% block script %}
+    <script>
+        toastr.options.positionClass = "toast-top-center";
+        $("#add_option_lesson").click(function () {
+            let data = new FormData();
+            data.append('csrfmiddlewaretoken', $('[name="csrfmiddlewaretoken"]').val());
+            $.ajax({
+                url:'{% url 'Ensure_status' %}',
+                type:'post',
+                data:data,
+                dataType:'json',
+                processData:false,
+                contentType:false,
+                success(res){
+                    if (res.code === 0){
+                        if (res.status === 1){
+                            $("#OptionLesson_add").modal();
+                        }
+                        if (res.status === 0){
+                            toastr.error("选课尚未开始")
+                        }
+                    }
+                },
+                fail() {
+                    console.log('接口调用失败')
+                }
+            });
+        });
+        $("#edit_del_lesson").click(function () {
+            let cookie_semester = $("#semester").text();
+            console.log(cookie_semester);
+            sessionStorage.setItem('semester', cookie_semester);
+            let number = getCookie('number');
+            let url = '{% url 'Edit_s_OptionLesson' 'number' 'semester' %}';
+            url = url.replace(/number/,number).replace(/semester/,cookie_semester);
+            window.location.href = url;
+         });
+        $("#option_lesson_save").click(function () {
+            var stu_number = getCookie('number');
+            console.log(stu_number);
+            var semester = $("#semester").text();
+            var lesson_number = $("#lesson_number").val();
+            var teacher_number = $("#teacher_number").val();
+            var pscj = "";
+            var kscj = "";
+            var zpcj = "";
+            console.log(stu_number);
+            console.log(semester);
+            console.log(pscj);
+            console.log(kscj);
+            console.log(zpcj);
+            if (lesson_number === "" || teacher_number === ""){
+                toastr.error("表格必须填写完整")
+            }
+            else{
+                var data_obj = new FormData();
+                data_obj.append('csrfmiddlewaretoken', $('[name="csrfmiddlewaretoken"]').val());
+                data_obj.append('stu_number', stu_number);
+                data_obj.append('semester', semester);
+                data_obj.append('lesson_number', lesson_number);
+                data_obj.append('teacher_number', teacher_number);
+                data_obj.append('pscj', pscj);
+                data_obj.append('kscj', kscj);
+                data_obj.append('zpcj', zpcj);
+                $.ajax({
+                    url:'{% url "Add_s_OptionLesson" %}',
+                    type:'post',
+                    data:data_obj,
+                    dataType:'json',
+                    processData:false,
+                    contentType:false,
+                    success(res) {
+                        if (res.code === -1){
+                            toastr.error("该选课记录已经存在")
+                        }
+                        if (res.code === -2){
+                            toastr.error("未开设此课程")
+                        }
+                        if (res.code === 0){
+                            location.reload();
+                        }
+                    },
+                    fail(){
+                        toastr.error("添加失败")
+                    }
+                })
+            }
+        })
+    </script>
+    <script>
+        window.onpageshow = function () {
+            setTimeout(function () {
+                let semes = sessionStorage.getItem('semester');
+                if (semes === null){
+                    semes = $("#semester").text();
+                }
+                $("#semester_change").val(semes);
+            },100)
+        };
+        $("#edit_semester_confirm").click(function () {
+            let cookie_semester = $("#semester_change").val();
+            sessionStorage.setItem('semester', cookie_semester);
+            let number = getCookie('number');
+            let url = '{% url 's_Lesson' 'number' 'semester' %}';
+            url = url.replace(/number/,number).replace(/semester/,cookie_semester);
+            window.location.href = url;
+        });
+        $("#search_button").click(function () {
+            let content = $("#search_input").val();
+            let semester = $("#semester_change").val();
+            if (content === ''){
+                toastr.error('请输入搜索内容')
+            }
+            else{
+                sessionStorage.setItem('semester', semester);
+                let url = '{% url 's_Lesson_Search' 'number' 'semester' 'content' %}';
+                url = url.replace(/number/,getCookie('number')).replace(/semester/,semester)
+                    .replace(/content/,content);
+                window.location.href = url;
+            }
+        })
+    </script>
+{% endblock %}

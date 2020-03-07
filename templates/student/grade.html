@@ -1,0 +1,91 @@
+{% extends './base.html' %}
+
+{% block s_register_grade %}active{% endblock %}
+
+{% block title %}成绩信息{% endblock %}
+
+{% block content %}
+    <table class="table table-striped">
+        <tr>
+            <th>课号</th>
+            <th>课名</th>
+            <th>工号</th>
+            <th>成绩</th>
+            <th></th>
+        </tr>
+        {% for lesson in page_of_list %}
+            <tr>
+                <td>{{ lesson.0 }}</td>
+                <td>{{ lesson.1 }}</td>
+                <td>{{ lesson.2 }}</td>
+                <td>{{ lesson.3 }}</td>
+            </tr>
+        {% endfor %}
+    </table>
+    {% csrf_token %}
+    <nav aria-label="Page navigation">
+        <ul class="pagination" style="margin-left: 42%">
+            <li>
+                {% if page_of_list.has_previous %}
+                    <a href="?page={{ page_of_list.previous_page_number }}" aria-label="Previous">
+                        <span aria-hidden="true">&laquo;</span>
+                    </a>
+                 {% else %}
+                    <span aria-hidden="true">&laquo;</span>
+                {% endif %}
+            </li>
+            {% for page_number in page_range %}
+                {% if page_number == page_of_list.number %}
+                        <li class="active"><span>{{ page_number }}</span></li>
+                {% else %}
+                    <li><a href="?page={{ page_number }}">{{ page_number }}</a></li>
+                {% endif %}
+            {% endfor %}
+            <li>
+                {% if page_of_list.has_next %}
+                    <a href="?page={{ page_of_list.next_page_number }}" aria-label="Next">
+                        <span aria-hidden="true">&raquo;</span>
+                    </a>
+                {% else %}
+                    <span aria-hidden="true">&raquo;</span>
+                {% endif %}
+            </li>
+        </ul>
+    </nav>
+{% endblock %}
+
+{% block script %}
+    <script>
+        window.onpageshow = function () {
+            setTimeout(function () {
+                let semes = sessionStorage.getItem('semester');
+                if (semes === null){
+                    semes = $("#semester").text();
+                }
+                $("#semester_change").val(semes);
+            },100)
+        };
+        $("#edit_semester_confirm").click(function () {
+                let cookie_semester = $("#semester_change").val();
+                sessionStorage.setItem('semester', cookie_semester);
+                let number = getCookie('number');
+                let url = '{% url 's_Grade' 'number' 'semester' %}';
+                url = url.replace(/number/,number).replace(/semester/,cookie_semester);
+                window.location.href = url;
+            });
+        $("#search_button").click(function () {
+                let content = $("#search_input").val();
+                let semester = $("#semester_change").val();
+                if (content === ''){
+                    toastr.error('请输入搜索内容')
+                }
+                else{
+                    sessionStorage.setItem('semester', semester);
+                    let url = '{% url 's_Grade_Search' 'number' 'semester' 'content' %}';
+                    url = url.replace(/number/,getCookie('number')).replace(/semester/,semester)
+                        .replace(/content/,content);
+                    window.location.href = url;
+                }
+            })
+    </script>
+{% endblock %}

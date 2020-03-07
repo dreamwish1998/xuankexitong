@@ -1,0 +1,132 @@
+{% extends './base.html' %}
+
+{% block register_grade %}active{% endblock %}
+
+{% block title %}登记学生成绩{% endblock %}
+
+{% block content %}
+    <table class="table table-striped">
+        <tr>
+            <th>课号</th>
+            <th>课名</th>
+            <th>上课时间</th>
+            <th></th>
+            <th></th>
+        </tr>
+        {% for lesson in page_of_list %}
+            <tr>
+                <td>{{ lesson.0 }}</td>
+                <td>{{ lesson.1 }}</td>
+                <td>{{ lesson.2 }}</td>
+                <td><button type="button" class="btn btn-info" onclick="Register('{{ lesson.0 }}')">登记成绩</button></td>
+                <td><button type="button" class="btn btn-primary" onclick="Check('{{ lesson.0 }}')">查看成绩</button></td>
+            </tr>
+        {% endfor %}
+    </table>
+    {% csrf_token %}
+    <nav aria-label="Page navigation">
+        <ul class="pagination" style="margin-left: 42%">
+            <li>
+                {% if page_of_list.has_previous %}
+                    <a href="?page={{ page_of_list.previous_page_number }}" aria-label="Previous">
+                        <span aria-hidden="true">&laquo;</span>
+                    </a>
+                 {% else %}
+                    <span aria-hidden="true">&laquo;</span>
+                {% endif %}
+            </li>
+            {% for page_number in page_range %}
+                {% if page_number == page_of_list.number %}
+                        <li class="active"><span>{{ page_number }}</span></li>
+                {% else %}
+                    <li><a href="?page={{ page_number }}">{{ page_number }}</a></li>
+                {% endif %}
+            {% endfor %}
+            <li>
+                {% if page_of_list.has_next %}
+                    <a href="?page={{ page_of_list.next_page_number }}" aria-label="Next">
+                        <span aria-hidden="true">&raquo;</span>
+                    </a>
+                {% else %}
+                    <span aria-hidden="true">&raquo;</span>
+                {% endif %}
+            </li>
+        </ul>
+    </nav>
+{% endblock %}
+
+{% block script %}
+    <script>
+        toastr.options.positionClass = 'toast-top-center';
+        let status_ps = 0;   //默认不允许平时成绩登记
+        let status_ks = 0;   //默认不允许考试成绩登记
+        function Register(lesson){
+            let semester = $("#semester").text();
+            let semester_current = $("#semester_change").val();
+            sessionStorage.setItem('lesson', lesson);
+            if (semester !== semester_current) {
+                toastr.error('未到登记成绩时间!')
+            }
+            else{
+                let data_obj = new FormData();
+                data_obj.append('csrfmiddlewaretoken', $('[name="csrfmiddlewaretoken"]').val());
+                $.ajax({
+                    url:'{% url 'JudgeGrade' %}',
+                    type:'post',
+                    data:data_obj,
+                    dataType:'json',
+                    processData:false,
+                    contentType:false,
+                    success(res){
+                        status_ps = res.result;
+                        status_ks = res.result_ks;
+                        if (status_ks || status_ps){
+                            let semester = $("#semester").text();
+                            let number = getCookie('number');
+                            sessionStorage.setItem('status_ps', status_ps);
+                            sessionStorage.setItem('status_ks', status_ks);
+                            let url = '{% url 'RegisterGrade' 'number' 'semester' 'lesson' %}';
+                            url = url.replace(/number/,number).replace(/semester/,semester).replace(/lesson/,lesson);
+                            window.location.href = url;
+                        }
+                        else{
+                            toastr.error("未到成绩登记时间")
+                        }
+                    },
+                    fail() {
+                        toastr.error('接口故障')
+                    },
+                    error(){
+                        toastr.error('接口故障')
+                    }
+                });
+            }
+        }
+        function Check(lesson){
+            let semester = $("#semester_change").val();
+            let number = getCookie('number');
+            sessionStorage.setItem('semester', semester);
+            sessionStorage.setItem('lesson', lesson);
+            let url = '{% url 'Check_grade' 'number' 'semester' 'lesson' %}';
+            url = url.replace(/number/,number).replace(/semester/,semester).replace(/lesson/,lesson);
+            window.location.href = url;
+        }
+        window.onpageshow = function(){
+            setTimeout(function () {
+                let semes = sessionStorage.getItem('semester');
+                if (semes === null){
+                    semes = $("#semester").text();
+                }
+                $("#semester_change").val(semes);
+            },100)
+        };
+        $("#edit_semester_confirm").click(function () {
+            let cookie_semester = $("#semester_change").val();
+            sessionStorage.setItem('semester', cookie_semester);
+            let number = getCookie('number');
+            let url = '{% url 'Grade' 'number' 'semester' %}';
+            url = url.replace(/number/,number).replace('semester',cookie_semester);
+            window.location.href = url;
+        })
+    </script>
+{% endblock %}

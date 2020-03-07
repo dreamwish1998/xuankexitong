@@ -1,0 +1,205 @@
+{% extends './base.html'%}
+
+{% block title %}选课表{% endblock %}
+
+{% block s_class_info %}active{% endblock %}
+
+{% block content %}
+     <table class="table table-striped">
+        <tr>
+            <th>学号</th>
+            <th>学期</th>
+            <th>课号</th>
+            <th>工号</th>
+            <th></th>
+        </tr>
+        {% for student in page_of_list %}
+            <tr>
+                <td>{{ student.xh }}</td>
+                <td>{{ student.xq }}</td>
+                <td>{{ student.kh }}</td>
+                <td>{{ student.gh }}</td>
+                <td><button type="button" class="btn btn-danger" onclick="Delete('{{ student.xh }}','{{ student.xq }}',
+                        '{{ student.kh }}','{{ student.gh }}')">删除</button></td>
+            </tr>
+        {% endfor %}
+   </table>
+    <nav aria-label="Page navigation">
+        <ul class="pagination" style="margin-left: 42%">
+            <li>
+                {% if page_of_list.has_previous %}
+                    <a href="?page={{ page_of_list.previous_page_number }}" aria-label="Previous">
+                        <span aria-hidden="true">&laquo;</span>
+                    </a>
+                 {% else %}
+                    <span aria-hidden="true">&laquo;</span>
+                {% endif %}
+            </li>
+            {% for page_number in page_range %}
+                {% if page_number == page_of_list.number %}
+                        <li class="active"><span>{{ page_number }}</span></li>
+                {% else %}
+                    <li><a href="?page={{ page_number }}">{{ page_number }}</a></li>
+                {% endif %}
+            {% endfor %}
+            <li>
+                {% if page_of_list.has_next %}
+                    <a href="?page={{ page_of_list.next_page_number }}" aria-label="Next">
+                        <span aria-hidden="true">&raquo;</span>
+                    </a>
+                {% else %}
+                    <span aria-hidden="true">&raquo;</span>
+                {% endif %}
+            </li>
+        </ul>
+    </nav>
+    <div class="modal fade" id="OptionLesson_add" aria-labelledby="MyModalLabel" tabindex="-1">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <form class="form-horizontal" autocomplete="off" method="post" accept-charset="UTF-8">
+                    {% csrf_token %}
+                    <div class="modal-header">
+                        <button class="close" data-dismiss="modal">x</button>
+                        <h3>添加选课信息</h3>
+                    </div>
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label for="mobile" class="col-sm-2 control-label">课号</label>
+                            <div class="col-sm-6">
+                                <input type="text" id="lesson_number" class="form-control" name="lesson_number" placeholder="输入该课程课号">
+                            </div>
+                            <div class="col-sm-4 tips"><span>* </span>必填</div>
+                        </div>
+                        <div class="form-group">
+                            <label for="email" class="col-sm-2 control-label">工号</label>
+                            <div class="col-sm-6">
+                                <input type="text" id="teacher_number" name="teacher_number" placeholder="输入授课教师工号" class="form-control">
+                            </div>
+                            <div class="col-sm-4 tips"><span>* </span>必填</div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button id="option_lesson_save" class="btn btn-primary" type="button">保存</button>
+                        <button class="btn btn-info" data-dismiss="modal">关闭</button>
+                    </div>
+                </form>
+			</div>
+        </div>
+    </div>
+    <div class="modal fade" id="Delete_optionlesson" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+       <div class="modal-dialog">
+           <div class="modal-content">
+               <form class="form-horizontal" method="post" autocomplete="off" action="{% url "Delete_s_OptionLesson" %}" accept-charset="UTF-8">
+                   {% csrf_token %}
+                   <div class="modal-header">
+                      <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+                      <h4 class="modal-title" style="text-align: center;font-size: 25px;">提示信息</h4>
+                   </div>
+                   <div class="modal-body">
+                       <text style="font-size: 17px;">确认删除该选课信息吗?</text>
+                       <br>
+                       <text style="color:#f30;display: inline-block;margin-top: 12px;">
+                           系统将同时删除该选课所有相关信息
+                       </text>
+                       <input type="hidden" name="semester" id="semester_delete">
+                       <input type="hidden" name="lesson_id" id="lesson_id_delete">
+                       <input type="hidden" name="teacher_id" id="teacher_id_delete">
+                       <input type="hidden" name="stu_number" id="stu_number_delete">
+                   </div>
+                   <div class="modal-footer">
+                       <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+                       <button type="submit" class="btn btn-danger">确认删除</button>
+                   </div>
+               </form>
+           </div>
+      </div>
+    </div>
+{% endblock %}
+
+{% block panel_content %}
+    <ul class="nav nav-pills nav-stacked">
+        <li role="presentation" id="add_option_lesson"><a href="#">添加课程</a></li>
+        <li role="presentation" id="edit_del_lesson"><a href="#">删除课程</a></li>
+    </ul>
+{% endblock %}
+
+{% block script %}
+    <script>
+        toastr.options.positionClass = "toast-top-center";
+        $("#add_option_lesson").click(function () {
+            $("#OptionLesson_add").modal();
+        });
+        $("#edit_del_lesson").click(function () {
+            let cookie_semester = $("#semester").text();
+            console.log(cookie_semester);
+            sessionStorage.setItem('semester', cookie_semester);
+            let number = getCookie('number');
+            let url = '{% url 'Edit_s_OptionLesson' 'number' 'semester' %}';
+            url = url.replace(/number/,number).replace(/semester/,cookie_semester);
+            window.location.href = url;
+         });
+        $("#option_lesson_save").click(function () {
+            var stu_number = getCookie('number');
+            var semester = $("#semester").text();
+            var lesson_number = $("#lesson_number").val();
+            var teacher_number = $("#teacher_number").val();
+            var pscj = "";
+            var kscj = "";
+            var zpcj = "";
+            if (lesson_number === "" || teacher_number === ""){
+                toastr.error("表格必须填写完整")
+            }
+            else{
+                var data_obj = new FormData();
+                data_obj.append('csrfmiddlewaretoken', $('[name="csrfmiddlewaretoken"]').val());
+                data_obj.append('stu_number', stu_number);
+                data_obj.append('semester', semester);
+                data_obj.append('lesson_number', lesson_number);
+                data_obj.append('teacher_number', teacher_number);
+                data_obj.append('pscj', pscj);
+                data_obj.append('kscj', kscj);
+                data_obj.append('zpcj', zpcj);
+                $.ajax({
+                    url:'{% url "Add_s_OptionLesson" %}',
+                    type:'post',
+                    data:data_obj,
+                    dataType:'json',
+                    processData:false,
+                    contentType:false,
+                    success(res) {
+                        if (res.code === -1){
+                            toastr.error("该选课记录已经存在")
+                        }
+                        if (res.code === -2){
+                            toastr.error("未开设此课程")
+                        }
+                        if (res.code === 0){
+                            location.reload();
+                        }
+                    },
+                    fail(){
+                        toastr.error("添加失败")
+                    }
+                })
+            }
+        })
+    </script>
+    <script>
+        function Delete(xh,xq,kh,gh) {
+            $("#stu_number_delete").val(xh);
+            $("#semester_delete").val(xq);
+            $("#lesson_id_delete").val(kh);
+            $("#teacher_id_delete").val(gh);
+            $("#Delete_optionlesson").modal();
+        }
+    </script>
+    <script>
+        window.onpageshow = function () {
+            var role = getCookie('role');
+            var status = getCookie('status');
+            if (role !== "student" || status === ""){
+                window.location.href = "{% url 'Login' %}"
+            }
+        }
+    </script>
+{% endblock %}
