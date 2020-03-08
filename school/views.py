@@ -912,7 +912,9 @@ def Student_Select_Lesson_Search(request, number, semester, content):
     cursor = connection.cursor()
     cursor.execute("select kh,km,gh,xm,mc,sksj from school_open_lesson tb1, school_lesson tb2,"
                    "school_teacher tb3,school_school tb4 where tb4.yxh=tb3.yxh_id and tb3.gh=tb1.gh_id and tb2.kh"
-                   "=tb1.kh_id and tb1.xq='"+semester+"' and (xm like '"+content+"%' or xm like '%"+content+"' or xm like '%"+content+"%' or kh='"+content+"');")
+                   "=tb1.kh_id and tb1.xq='"+semester+"' "
+                   "and (xm like '"+content+"%' or xm like '%"+content+"' or xm like '%"+content+"%' or km like '"+content+"%' or km like '%"+content+"' or km like '%"+content+"%'"
+                   " or kh like '"+content+"%' or kh like '%"+content+"' or kh like '%"+content+"%');")
     lesson_list = cursor.fetchall()
     paginator = Paginator(lesson_list, 20)
     page_num = request.GET.get("page", 1)
@@ -1504,7 +1506,9 @@ def s_Lesson_Search(request, number, semester, content):
     cursor.execute("select kh,km,gh,xm,sksj from school_option_lesson tb1,school_open_lesson tb2,school_lesson tb3,"
                    "school_teacher tb4,school_school tb5 where tb5.yxh=tb4.yxh_id and tb4.gh=tb1.gh_id and tb3.kh"
                    "=tb1.kh_id and tb2.kh_id=tb1.kh_id and tb2.gh_id=tb1.gh_id and tb2.xq=tb1.xq and tb1.xh_id='"+number
-                   +"' and tb1.xq='" + semester + "' and (xm like '"+content+"%' or xm like '%"+content+"' or xm like '%"+content+"%');")
+                   +"' and tb1.xq='" + semester + "' and (xm like '"+content+"%' or xm like '%"+content+"' or xm like '%"+content+"%' "
+                   "or kh like '"+content+"%' or kh like '%"+content+"' or kh like '%"+content+"%' "
+                   "or km like '"+content+"%' or km like '%"+content+"' or km like '%"+content+"%');")
     lesson_list = cursor.fetchall()
     paginator = Paginator(lesson_list, 20)
     page_num = request.GET.get("page", 1)
@@ -1619,7 +1623,8 @@ def s_Grade_Search(request, number, semester, content):
     context = {}
     cursor = connection.cursor()
     cursor.execute("select kh,km,gh,zpcj from school_option_lesson tb1,school_lesson tb2,school_teacher tb3 where tb1.kh_id=tb2.kh and tb1.gh_id=tb3.gh and"
-                   " tb1.xh_id='"+number+"' and tb1.xq='"+semester+"' and kh='"+content+"';")
+                   " tb1.xh_id='"+number+"' and tb1.xq='"+semester+"' and (kh like '"+content+"%' or kh like '%"+content+"' or kh like '%"+content+"%' "
+                   "or km like '"+content+"%' or km like '%"+content+"' or km like '%"+content+"%');")
     lesson_list = cursor.fetchall()
     paginator = Paginator(list(lesson_list), 20)
     page_num = request.GET.get("page", 1)
@@ -2052,7 +2057,8 @@ def s_Get_Student_Note_Search(request, xh, xq, content):
     context = {}
     cursor = connection.cursor()
     cursor.execute("select tb1.gh_id, tb1.kh_id, created_time, content from school_option_lesson tb1, school_note_table tb2 "
-                   "where tb1.gh_id=tb2.gh_id and tb1.kh_id=tb2.kh_id and tb1.xq=tb2.xq and tb1.xh_id='"+xh+"' and tb1.xq='"+xq+"' and tb1.kh_id='"+content+"';")
+                   "where tb1.gh_id=tb2.gh_id and tb1.kh_id=tb2.kh_id and tb1.xq=tb2.xq and tb1.xh_id='"+xh+"' and tb1.xq='"+xq+"' and "
+                   "(tb1.kh_id like '%"+content+"' or tb1.kh_id like '%"+content+"%' or tb1.kh_id like '"+content+"%');")
     note = cursor.fetchall()
     paginator = Paginator(note, 20)
     page_num = request.GET.get("page", 1)
@@ -2267,6 +2273,33 @@ def s_Get_School_Note(request, xq):
     context['page_of_list'] = page_of_list
     context['page_range'] = page_range
     return render(request, './student/school_note.html', context)
+
+def Get_School_Note_student_Search(request, content):
+    context = {}
+    note_list = Note_table.objects.filter(Q(content__contains=content))
+    paginator = Paginator(note_list, 20)
+    page_num = request.GET.get('page', 1)
+    page_of_list = paginator.get_page(page_num)
+    current_page_num = page_of_list.number
+
+    page_range = list(range(max(current_page_num - 2, 1), current_page_num)) + \
+                 list(range(current_page_num, min(current_page_num + 2, paginator.num_pages) + 1))
+
+    if page_range[0] - 1 >= 2:
+        page_range.insert(0, '...')
+    if paginator.num_pages - page_range[-1] >= 2:
+        page_range.append('...')
+
+    if page_range[0] != 1:
+        page_range.insert(0, 1)
+    if page_range[-1] != paginator.num_pages:
+        page_range.append(paginator.num_pages)
+
+    context['page_of_list'] = page_of_list
+    context['page_range'] = page_range
+
+    return render(request, './superuser/student_note_search.html', context)
+
 
 def Get_School_Note_student_Search(request, content):
     context = {}

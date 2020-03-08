@@ -127,7 +127,29 @@
     <script>
         toastr.options.positionClass = "toast-top-center";
         $("#add_option_lesson").click(function () {
-            $("#OptionLesson_add").modal();
+            let data = new FormData();
+            data.append('csrfmiddlewaretoken', $('[name="csrfmiddlewaretoken"]').val());
+            $.ajax({
+                url:'{% url 'Ensure_status' %}',
+                type:'post',
+                data:data,
+                dataType:'json',
+                processData:false,
+                contentType:false,
+                success(res){
+                    if (res.code === 0){
+                        if (res.status === 1){
+                            $("#OptionLesson_add").modal();
+                        }
+                        if (res.status === 0){
+                            toastr.error("选课尚未开始")
+                        }
+                    }
+                },
+                fail() {
+                    console.log('接口调用失败')
+                }
+            });
         });
         $("#edit_del_lesson").click(function () {
             let cookie_semester = $("#semester").text();
@@ -186,11 +208,33 @@
     </script>
     <script>
         function Delete(xh,xq,kh,gh) {
-            $("#stu_number_delete").val(xh);
-            $("#semester_delete").val(xq);
-            $("#lesson_id_delete").val(kh);
-            $("#teacher_id_delete").val(gh);
-            $("#Delete_optionlesson").modal();
+            let data = new FormData();
+            data.append('csrfmiddlewaretoken', $('[name="csrfmiddlewaretoken"]').val());
+            $.ajax({
+                url:'{% url 'Ensure_status' %}',
+                type:'post',
+                data:data,
+                dataType:'json',
+                processData:false,
+                contentType:false,
+                success(res){
+                    if (res.code === 0){
+                        if (res.status === 1){
+                            $("#stu_number_delete").val(xh);
+                            $("#semester_delete").val(xq);
+                            $("#lesson_id_delete").val(kh);
+                            $("#teacher_id_delete").val(gh);
+                            $("#Delete_optionlesson").modal();
+                        }
+                        if (res.status === 0){
+                            toastr.error("选课尚未开始")
+                        }
+                    }
+                },
+                fail() {
+                    console.log('接口调用失败')
+                }
+            });
         }
     </script>
     <script>
